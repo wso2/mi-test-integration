@@ -62,13 +62,12 @@ source /etc/environment
 
 log_info "Clone Product repository"
 git clone https://${GIT_USER}:${GIT_PASS}@$PRODUCT_REPOSITORY --branch $PRODUCT_REPOSITORY_BRANCH --single-branch
-sed -i "s/${PRODUCT_VERSION}.*-SNAPSHOT/${PRODUCT_VERSION}/g" pom.xml
 
 log_info "Exporting JDK"
 install_jdk ${JDK_TYPE}
 
 log_info "Build repository"
-mvn clean install -f $PRODUCT_REPO_DIR/pom.xml -Dmaven.test.skip=true
+cd $PRODUCT_REPO_DIR && sed -i "s/${PRODUCT_VERSION}.*-SNAPSHOT/${PRODUCT_VERSION}/g" pom.xml && mvn clean install -Dmaven.test.skip=true
 
 mkdir -p $PRODUCT_REPOSITORY_PACK_DIR
 log_info "Copying product pack to Repository"
