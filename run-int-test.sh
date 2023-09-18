@@ -67,14 +67,34 @@ log_info "Exporting JDK"
 install_jdk ${JDK_TYPE}
 
 log_info "Build repository"
-cd $PRODUCT_REPO_DIR && sed -i "s/${PRODUCT_VERSION}.*-SNAPSHOT/${PRODUCT_VERSION}/g" pom.xml && mvn clean install -Dmaven.test.skip=true
+
+cd $PRODUCT_REPO_DIR
+version_tags=$(grep -o "<version>.*</version>" "pom.xml")
+second_version_tag=$(echo "$version_tags" | sed -n 2p)
+snapshot_version=$(echo "$second_version_tag" | sed "s/<version>\(.*\)<\/version>/\1/")
+version="${snapshot_version%-SNAPSHOT}"
+last_number=$(echo "$version" | grep -oE '[0-9]+$')
+if ((last_number > 0)); then
+    decremented_version="${version%$last_number*}$((last_number - 1))"
+else
+    decremented_version=${PRODUCT_VERSION}
+fi
+
+NEW_PRODUCT_PACK_NAME="${PRODUCT_NAME}-${decremented_version}"
+
+# Fetch and checkout to the tag of the previous version
+git fetch --tags origin v${decremented_version}
+git checkout v${decremented_version}
+
+mvn clean install -Dmaven.test.skip=true
+cd -
 
 mkdir -p $PRODUCT_REPOSITORY_PACK_DIR
 log_info "Copying product pack to Repository"
 [ -f $TESTGRID_DIR/$PRODUCT_NAME-$PRODUCT_VERSION*.zip ] && rm -f $TESTGRID_DIR/$PRODUCT_NAME-$PRODUCT_VERSION*.zip
-cd $TESTGRID_DIR && zip -qr $PRODUCT_PACK_NAME.zip $PRODUCT_PACK_NAME
-mv $TESTGRID_DIR/$PRODUCT_PACK_NAME.zip $PRODUCT_REPOSITORY_PACK_DIR/.
+cd $TESTGRID_DIR && mv $PRODUCT_PACK_NAME $PRODUCT_NAME-$decremented_version && zip -qr $PRODUCT_NAME-$decremented_version.zip $PRODUCT_NAME-$decremented_version
+mv $TESTGRID_DIR/$PRODUCT_NAME-$decremented_version.zip $PRODUCT_REPOSITORY_PACK_DIR/.
 
 log_info "install pack into local maven Repository"
-mvn install:install-file -Dfile=$PRODUCT_REPOSITORY_PACK_DIR/$PRODUCT_PACK_NAME.zip -DgroupId=org.wso2.am -DartifactId=wso2am -Dversion=$PRODUCT_VERSION -Dpackaging=zip --file=$PRODUCT_REPOSITORY_PACK_DIR/../pom.xml 
+mvn install:install-file -Dfile=$PRODUCT_REPOSITORY_PACK_DIR/$PRODUCT_NAME-$decremented_version.zip -DgroupId=org.wso2.ei -DartifactId=wso2mi -Dversion=$decremented_version -Dpackaging=zip --file=$PRODUCT_REPOSITORY_PACK_DIR/../pom.xml 
 cd $INT_TEST_MODULE_DIR  && mvn clean install -fae -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Ptestgrid -DskipBenchMarkTest=true -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
