@@ -1,6 +1,6 @@
 #!/bin/bash
 #----------------------------------------------------------------------------
-#  Copyright (c) 2022 WSO2, LLC. http://www.wso2.org
+#  Copyright (c) 2023 WSO2, LLC. http://www.wso2.org
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -85,8 +85,6 @@ NEW_PRODUCT_PACK_NAME="${PRODUCT_NAME}-${decremented_version}"
 # Fetch and checkout to the tag of the previous version
 git fetch --tags origin v${decremented_version}
 git checkout v${decremented_version}
-
-mvn clean install -Dmaven.test.skip=true
 cd -
 
 mkdir -p $PRODUCT_REPOSITORY_PACK_DIR
@@ -97,4 +95,4 @@ mv $TESTGRID_DIR/$PRODUCT_NAME-$decremented_version.zip $PRODUCT_REPOSITORY_PACK
 
 log_info "install pack into local maven Repository"
 mvn install:install-file -Dfile=$PRODUCT_REPOSITORY_PACK_DIR/$PRODUCT_NAME-$decremented_version.zip -DgroupId=org.wso2.ei -DartifactId=wso2mi -Dversion=$decremented_version -Dpackaging=zip --file=$PRODUCT_REPOSITORY_PACK_DIR/../pom.xml 
-cd $INT_TEST_MODULE_DIR  && mvn clean install -fae -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Ptestgrid -DskipBenchMarkTest=true -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
+cd $INT_TEST_MODULE_DIR  && mvn clean install -fae -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
