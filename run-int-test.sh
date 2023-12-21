@@ -86,7 +86,7 @@ NEW_PRODUCT_PACK_NAME="${PRODUCT_NAME}-${decremented_version}"
 git fetch --tags origin v${decremented_version}
 git checkout v${decremented_version}
 
-mvn clean install -Dmaven.test.skip=true -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false
+mvn clean install -Dmaven.test.skip=true -Dhttp.keepAlive=true -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.timeout=60000 -Dmaven.wagon.http.retryHandler.count=3
 cd -
 
 mkdir -p $PRODUCT_REPOSITORY_PACK_DIR
